@@ -97,7 +97,7 @@ class GuildedClient {
         axios(config)
             .then(function (response) {
                 response.data.teams.forEach((teamInfo) => {
-                    if(teamInfo == 'PN Development') {
+                    if(teamInfo.name == 'PN-DJ') {
                         self.teams.add(teamInfo.id).then((team) => {
                             //self.cacheChannels(team);
                         });
