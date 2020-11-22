@@ -11,10 +11,11 @@ class Message {
         this.contentType = message["contentType"];
         this.message = message["message"];
 		this.team = channel.team;
-		channel.team.members.fetch(message["createdBy"]).then((user) => {
-			this.author = user;
-		});
-
+        if (channel.team.members) {
+            channel.team.members.fetch(message["createdBy"]).then((user) => {
+                this.author = user;
+            });
+        }
         this.mentions = [];
 
         this.content = this.toMessageFormat();
@@ -24,7 +25,7 @@ class Message {
         var config = {
             method: 'post',
             url: 'https://api.guilded.gg/channels/'+ this.channel.id +'/messages/'+ this.id +'/reactions/'+reaction,
-            headers: { 
+            headers: {
                 'Cookie': this.client.cookies
             }
         };
@@ -79,7 +80,7 @@ class Message {
 									lineContent.content.push( { "type": "text", "text": leaf.text } );
                                 	lineContent.text += leaf.text;
 								});
-                                
+
                                 break;
                             case "inline":
 								node.nodes[0].leaves.forEach((leaf) => {
@@ -102,7 +103,7 @@ class Message {
                                 break;
                         }
                     });
-                
+
                     break;
                 case "block-quote-container":
                     line.nodes.forEach((node) => {
@@ -111,7 +112,7 @@ class Message {
                                 case "text":
                                     lineContent.content.push( { "type": "text", "text": nodeLine.leaves[0].text } );
                                     lineContent.text += nodeLine.leaves[0].text;
-                                
+
                                     break;
                                 case "inline":
                                     switch(nodeLine.type) {
@@ -119,26 +120,26 @@ class Message {
                                             this.mentions.push(nodeLine.data.mention);
                                             lineContent.content.push( { "type": "mention", "text": nodeLine.nodes[0].leaves[0].text, "mentionId": nodeLine.data.mention.id } );
                                             lineContent.text += nodeLine.nodes[0].leaves[0].text;
-                                        
+
                                             break;
                                         case "reaction":
                                             lineContent.content.push( { "type": "reaction", "text": nodeLine.nodes[0].leaves[0].text, "reactionId": nodeLine.data.reaction.id } );
                                             lineContent.text += nodeLine.nodes[0].leaves[0].text;
-                                        
+
                                             break;
                                         case "channel":
                                             this.mentions.push(nodeLine.data.channel);
                                             lineContent.content.push( { "type": "mention", "text": nodeLine.nodes[0].leaves[0].text, "mentionedChannelId": nodeLine.data.channel.id } );
                                             lineContent.text += nodeLine.nodes[0].leaves[0].text;
-                                        
+
                                             break;
                                     }
-                                
+
                                     break;
                             }
                         });
                     });
-                
+
                     break;
                 case "markdown-plain-text":
                     lineContent.content.push( { "type": "text", "text": line.nodes[0].leaves[0].text } );
@@ -147,7 +148,7 @@ class Message {
                     break;
                 case "webhookMessage":
                     lineContent.content.push( { "type": "embed", "content": line.data.embeds } );
-                
+
                     break;
             }
 
@@ -214,8 +215,8 @@ class Message {
         var config = {
             method: 'post',
             url: 'https://api.guilded.gg/channels/'+ this.channel.id +'/threads',
-            headers: { 
-                'Content-Type': 'application/json', 
+            headers: {
+                'Content-Type': 'application/json',
                 'Cookie': this.client.cookies
             },
             data : data
@@ -258,8 +259,8 @@ class Message {
         var config = {
             method: 'put',
             url: 'https://api.guilded.gg/channels/'+ this.channel.id +'/messages/'+ this.id,
-            headers: { 
-                'Content-Type': 'application/json', 
+            headers: {
+                'Content-Type': 'application/json',
                 'Cookie': this.client.cookies
             },
             data : message

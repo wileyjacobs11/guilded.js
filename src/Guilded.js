@@ -15,7 +15,7 @@ class GuildedClient {
         this.teams = new TeamManager(this);
         this.id = "";
     }
-  
+
     login(email, password) {
 
         var self = this;
@@ -24,12 +24,12 @@ class GuildedClient {
         var config = {
             method: 'post',
             url: 'https://api.guilded.gg/login',
-            headers: { 
+            headers: {
                 'Content-Type': 'application/json'
             },
             data : data
         };
-    
+
         axios(config)
             .then(function (response) {
                 self.cookies = "";
@@ -43,13 +43,13 @@ class GuildedClient {
                 self.cacheTeams();
 
                 self.ws = new WebSocket('wss://api.guilded.gg/socket.io/?jwt=undefined&EIO=3&transport=websocket', {headers:{cookie: self.cookies}});
-                
+
                 self.ws.on('open', function open() {
                     //console.log("websocket connected");
                     self.emit('ready', '');
                     heartbeat();
                 });
-            
+
                 function heartbeat() {
                     if (!self.ws) return;
                     if (self.ws.readyState !== 1) return;
@@ -74,7 +74,7 @@ class GuildedClient {
                 self.ws.on('close', function close(data) {
                     console.log('disconnected',data);
                 });
-            
+
             })
             .catch(function (error) {
                 console.log(error.message, "error");
@@ -86,8 +86,8 @@ class GuildedClient {
         var config = {
             method: 'get',
             url: 'https://api.guilded.gg/me',
-            headers: { 
-            'Content-Type': 'application/json', 
+            headers: {
+            'Content-Type': 'application/json',
             'Cookie': this.cookies
             }
         };
@@ -111,8 +111,8 @@ class GuildedClient {
         var config = {
             method: 'get',
             url: 'https://api.guilded.gg/teams/'+ team.id +'/channels',
-            headers: { 
-                'Content-Type': 'application/json', 
+            headers: {
+                'Content-Type': 'application/json',
                 'Cookie': this.cookies
             }
         };
@@ -135,8 +135,8 @@ class GuildedClient {
         var config = {
             method: 'get',
             url: 'https://api.guilded.gg/users/'+ this.id +'/channels',
-            headers: { 
-                'Content-Type': 'application/json', 
+            headers: {
+                'Content-Type': 'application/json',
                 'Cookie': this.cookies
             }
         };
@@ -167,10 +167,11 @@ class GuildedClient {
                             });
 
                             this.teams.fetch(message[1].teamId).then((team) => {
+                                if (team && team.channels){
                                 team.channels.fetch(message[1].channelId).then((teamChannel) => {
                                     teamChannel.messages.add(message[1], teamChannel);
                                 });
-                            });
+                            }});
                         });
 
                         break;
@@ -188,41 +189,45 @@ class GuildedClient {
             case "ChatMessageUpdated":
                 this.teams.fetch(message[1].teamId).then((team) => {
                     this.channels.fetch(message[1].channelId, team).then((channel) => {
+                        if (channel && channel.messages) {
                         channel.messages.add(message[1]).then((msg) => {
                             msg.message = message[1].message;
                             msg.content = msg.toMessageFormat();
 
                             this.emit('messageEdited', msg);
                         });
-                    });
-
+                    }});
+                    if (team && team.channels) {
                     team.channels.fetch(message[1].channelId, team).then((channel) => {
                         channel.messages.add(message[1]).then((msg) => {
                             msg.message = message[1].message;
                             msg.content = msg.toMessageFormat();
                         });
                     });
-                });
+                }});
 
                 break;
             case "ChatMessageReactionAdded":
                 this.emit('reactionAdded', message[1]);
-            
+
                 break;
             case "TEAM_CHANNEL_ARCHIVED":
                 this.teams.fetch(message[1].teamId).then((team) => {
                     this.channels.fetch(message[1].channelId, team).then((channel) => {
+                        if (channel && channel.archived){
                         channel.archived = true;
                         this.emit('channelArchived', channel);
+                        }
                     });
                 });
-            
+
                 break;
             case "TemporalChannelCreated":
                 this.teams.fetch(message[1].teamId).then((team) => {
                     this.channels.addRaw(message[1].channel, team).then((channel) => {
                         this.emit('channelCreated', channel);
                     });
+                    if (team && team.channels)
                     team.channels.addRaw(message[1].channel, team);
                 });
 
@@ -264,9 +269,9 @@ class GuildedClient {
         } else {
 
             message.forEach( msg => {
-                
+
                 if( msg["type"] == "markdown" ) {
-                
+
                     parsedMessage += JSON.stringify(
                         {
                         "object":"block",
@@ -287,11 +292,11 @@ class GuildedClient {
                             }
                         ]
                     });
-                
+
                 }
-                
+
                 if( msg["type"] == "paragraph" ) {
-                
+
                     parsedMessage += JSON.stringify(
                         {
                         "object":"block",
@@ -312,11 +317,11 @@ class GuildedClient {
                             }
                         ]
                     });
-                
+
                 }
-                
+
                 if( msg["type"] == "embed" ) {
-                
+
                     parsedMessage += JSON.stringify(
                         {
                         "object":"block",
@@ -328,11 +333,11 @@ class GuildedClient {
                         },
                         "nodes":[]
                         });
-                
+
                 }
 
                 if( msg["type"] == "quote" ) {
-                
+
                     parsedMessage += JSON.stringify(
                         {
                         "object":"block",
@@ -357,11 +362,11 @@ class GuildedClient {
                             }
                         ]
                     });
-                
+
                 }
-                
+
                 parsedMessage += ',';
-                
+
             })
         }
 
@@ -370,15 +375,15 @@ class GuildedClient {
 
         return parsedMessage;
     }
-  
+
     setPresence(status) {
         var data = JSON.stringify({"status": status});
 
         var config = {
             method: 'post',
             url: 'https://api.guilded.gg/users/me/presence',
-            headers: { 
-            'Content-Type': 'application/json', 
+            headers: {
+            'Content-Type': 'application/json',
             'Cookie': this.cookies
             },
             data : data
@@ -397,8 +402,8 @@ class GuildedClient {
         var config = {
             method: 'get',
             url: 'https://api.guilded.gg/users/'+ userId +'/profilev3',
-            headers: { 
-            'Content-Type': 'application/json', 
+            headers: {
+            'Content-Type': 'application/json',
             'Cookie': this.cookies
             }
         };
@@ -417,8 +422,8 @@ class GuildedClient {
         var config = {
             method: 'get',
             url: 'https://api.guilded.gg/teams/'+ teamId,
-            headers: { 
-            'Content-Type': 'application/json', 
+            headers: {
+            'Content-Type': 'application/json',
             'Cookie': this.cookies
             }
         };
@@ -437,8 +442,8 @@ class GuildedClient {
         var config = {
             method: 'get',
             url: 'https://api.guilded.gg/me',
-            headers: { 
-            'Content-Type': 'application/json', 
+            headers: {
+            'Content-Type': 'application/json',
             'Cookie': this.cookies
             }
         };
@@ -459,8 +464,8 @@ class GuildedClient {
         var config = {
             method: 'put',
             url: 'https://api.guilded.gg/invites/'+ inviteId,
-            headers: { 
-            'Content-Type': 'application/json', 
+            headers: {
+            'Content-Type': 'application/json',
             'Cookie': this.cookies
             },
             data : data
@@ -483,8 +488,8 @@ class GuildedClient {
         var config = {
             method: 'get',
             url: 'https://api.guilded.gg/invites/'+ inviteId +'/team',
-            headers: { 
-            'Content-Type': 'application/json', 
+            headers: {
+            'Content-Type': 'application/json',
             'Cookie': this.cookies
             },
             data : data
@@ -505,8 +510,8 @@ class GuildedClient {
         var config = {
             method: 'get',
             url: 'https://api.guilded.gg/users/'+ userId +'/posts',
-            headers: { 
-            'Content-Type': 'application/json', 
+            headers: {
+            'Content-Type': 'application/json',
             'Cookie': this.cookies
             }
         };

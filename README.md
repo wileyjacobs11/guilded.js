@@ -9,3 +9,5 @@ Guilded.js is a wrapper for guilded's user API.
 # Documentation
 
 For now you can find the documentation at https://www.guilded.gg/guilded-api/groups/Q3myMlQ3/channels/9f1f95d8-bec2-464a-b8a9-8f7fd2d9013f/docs
+
+Forked from: https://github.com/Chixel/guilded.js
