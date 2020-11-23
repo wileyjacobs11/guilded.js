@@ -11,7 +11,7 @@ class Message {
         this.contentType = message["contentType"];
         this.message = message["message"];
 		this.team = channel.team;
-        if (channel && channel.team.members) {
+        if (channel && channel.team && channel.team.members) {
             channel.team.members.fetch(message["createdBy"]).then((user) => {
                 this.author = user;
             });
